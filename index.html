@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1c4f8a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Driver Eval">
+<title>City Driver Evaluation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=Carlito:wght@400;700&display=swap">
+<style>
+/* Layout: clipboard-style mobile app — sticky day tabs on top, section cards, fixed action bar; print sheets are a separate black-on-white letter layout */
+:root{
+  --bg:#eceff2; --card:#ffffff; --ink:#16212c; --mute:#5c6874; --line:#d3d9e0;
+  --accent:#1c4f8a; --accent-ink:#ffffff; --soft:#e3ebf5;
+  --ok:#1e7a4c; --okbg:#ddf1e5; --warn:#a65d0c; --warnbg:#fbecd6; --na:#4f5b67; --nabg:#e4e8ec;
+  --f-disp:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-form:"Carlito",Calibri,"Segoe UI",Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11161c; --card:#1a2129; --ink:#e7ecf1; --mute:#97a3af; --line:#2c3640;
+  --accent:#6ea6e8; --accent-ink:#0c1520; --soft:#1f2e40;
+  --ok:#6fd39f; --okbg:#173627; --warn:#f0b062; --warnbg:#3b2a14; --na:#b3bdc7; --nabg:#28313b;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161c; --card:#1a2129; --ink:#e7ecf1; --mute:#97a3af; --line:#2c3640;
+  --accent:#6ea6e8; --accent-ink:#0c1520; --soft:#1f2e40;
+  --ok:#6fd39f; --okbg:#173627; --warn:#f0b062; --warnbg:#3b2a14; --na:#b3bdc7; --nabg:#28313b;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.4 var(--f-body);-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+
+.top{position:sticky;top:0;z-index:20;background:var(--bg);padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 0}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.brand h1{margin:0;font:700 24px/1 var(--f-disp);letter-spacing:.02em;text-transform:uppercase}
+.brand span{font-size:13px;color:var(--mute)}
+.who{display:flex;gap:8px;margin-top:10px}
+.who select{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:16px}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 14px;font-weight:600;white-space:nowrap}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.small{padding:6px 10px;font-size:14px;border-radius:8px}
+.btn.danger{color:#b3261e;border-color:#e5b8b4}
+.days{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:10px 0 10px;border-bottom:1px solid var(--line)}
+.day{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:6px 4px 7px;text-align:center}
+.day b{display:block;font:700 18px/1.1 var(--f-disp);letter-spacing:.02em}
+.day small{display:block;font-size:11px;color:var(--mute);font-variant-numeric:tabular-nums}
+.day i{display:block;height:3px;border-radius:2px;background:var(--line);margin:4px 6px 0;overflow:hidden}
+.day i::before{content:"";display:block;height:100%;width:var(--p,0%);background:var(--ok)}
+.day[aria-selected="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--soft)}
+
+main{padding-inline:16px;padding-block:14px calc(96px + env(safe-area-inset-bottom,0px));max-width:760px;margin:0 auto;display:grid;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.card>h2,.card summary{margin:0;font:700 19px/1.15 var(--f-disp);letter-spacing:.03em;text-transform:uppercase}
+.card summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.card summary::-webkit-details-marker{display:none}
+.card summary::after{content:"Edit";font:600 13px var(--f-body);text-transform:none;letter-spacing:0;color:var(--accent)}
+details[open] summary::after{content:"Close"}
+.sum-line{font-size:14px;color:var(--mute);margin-top:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+.grid.wide{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+input[type=date]{min-width:0;-webkit-appearance:none;appearance:none;min-height:44px}
+label.f{display:grid;gap:4px;font-size:13px;color:var(--mute);font-weight:500;min-width:0}
+label.f input,label.f textarea{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:9px;background:var(--bg);font-size:16px;color:var(--ink)}
+.row{display:flex;gap:8px;align-items:center}
+.row input{flex:1;min-width:0}
+.opt{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.opt button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:7px 12px;font-size:14px}
+.opt button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.lbl{font-size:13px;color:var(--mute);font-weight:500;margin-top:12px}
+
+.sec-h{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.sec-h h2{margin:0;font:700 19px/1.15 var(--f-disp);letter-spacing:.03em;text-transform:uppercase}
+.sec-h .cnt{font-size:13px;color:var(--mute);font-variant-numeric:tabular-nums}
+.sec-h .done{color:var(--ok);font-weight:600}
+.items{display:grid}
+.it{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.it:first-child{border-top:0}
+.it p{margin:0;flex:1;min-width:0;font-size:15px;line-height:1.3}
+.seg{display:flex;flex-shrink:0;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{border:0;background:transparent;min-width:44px;padding:9px 6px;font-size:13px;font-weight:600;color:var(--mute)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on[data-v="S"]{background:var(--okbg);color:var(--ok)}
+.seg button.on[data-v="NI"]{background:var(--warnbg);color:var(--warn)}
+.seg button.on[data-v="NA"]{background:var(--nabg);color:var(--na)}
+.note{font-size:13px;color:var(--mute);margin:2px 0 8px}
+
+textarea{resize:vertical;min-height:84px}
+.hint{font-size:12px;color:var(--mute);text-align:right;font-variant-numeric:tabular-nums}
+.sigbox{margin-top:8px;border:1px dashed var(--mute);border-radius:10px;background:#fff;position:relative;touch-action:none}
+.sigbox canvas{display:block;width:100%;height:130px}
+.sigbox span{position:absolute;left:12px;bottom:8px;font-size:12px;color:#8a949e;pointer-events:none}
+
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--card);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;justify-content:center}
+.bar .btn{flex:1;max-width:280px;padding:13px 14px}
+
+.ov{position:fixed;inset:0;z-index:50;background:#5d6670;display:flex;flex-direction:column}
+.ov-bar{display:flex;flex-wrap:wrap;gap:8px;padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;background:var(--card);border-bottom:1px solid var(--line)}
+.ov-bar .sp{flex:1}
+.pv{flex:1;overflow:auto;padding:16px;display:grid;gap:16px;justify-items:center;align-content:start;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.pw{position:relative;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+.pw .page{transform-origin:0 0;position:absolute;left:0;top:0}
+.modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:grid;place-items:center;padding:16px}
+.modal .card{max-width:360px;width:100%}
+.modal p{margin:8px 0 14px}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:14px;z-index:70}
+
+/* ---------- Printed form (always black on white) ---------- */
+#print-root{display:none}
+.page{width:8.5in;height:11in;padding:.42in .5in;background:#fff;color:#000;font-family:var(--f-form);display:flex;flex-direction:column;color-scheme:light}
+.pc{flex:1;display:flex;flex-direction:column;gap:17px;min-height:0;overflow:hidden}
+.pf{text-align:right;font-size:10.5px;padding-top:4px}
+.pen{color:#14306e;font-weight:700}
+table.ft{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13.2px;line-height:1.15}
+table.ft td,table.ft th{border:1px solid #000;padding:0 7px;height:17px;vertical-align:middle}
+table.ft{border:1.6px solid #000}
+table.ft tr.th th{height:36px;font-weight:700;text-align:center;font-size:13.2px;line-height:1.15;padding:2px 4px}
+table.ft td.ck{text-align:center;padding:0}
+table.ft td.ck svg{width:15px;height:13px;vertical-align:middle}
+table.ft td.it{white-space:nowrap;overflow:hidden}
+table.rs tr.th th{height:20px}
+table.rv td{font-weight:700;height:24px}
+.pnote{text-align:center;font-weight:700;font-size:13.5px;margin:-4px 0}
+.pnote.lg{font-family:Arial,Helvetica,sans-serif;font-weight:400;font-size:13.5px}
+.hd{position:relative;display:flex;flex-direction:column;gap:13px;padding-right:.1in;margin-bottom:2px}
+.hd .lg{position:absolute;right:-.1in;top:-.05in;width:1.3in;height:1.3in;object-fit:contain}
+.hr{display:flex;align-items:flex-end;gap:4px;font-size:16px;white-space:nowrap}
+.hr b{font-weight:700}
+.ln{display:inline-block;border-bottom:1px solid #000;height:20px;line-height:20px;padding:0 4px;overflow:hidden;text-overflow:clip;position:relative;font-family:var(--f-form);font-size:15px;color:#14306e;font-weight:700}
+.ln.f{flex:1;min-width:0}
+.w14{width:1.4in}.w16{width:1.6in}.w18{width:1.75in}.w22{width:2.1in}.w26{width:2.3in}.w30{width:2.9in}.w44{width:4.4in}
+.ttl{text-align:center;font-weight:700;font-size:21px;margin:-4px 0 -2px}
+.hd .r1{padding-right:1.4in}
+.hr small{font-size:9px;font-weight:400;margin-left:3px;align-self:center}
+.cm{display:flex;flex-direction:column;gap:14px}
+.cm .cl b{display:block;font-size:14.5px}
+.cm .cl.n b{font-weight:400}
+.lines{margin-top:2px;line-height:22px;font-size:14px;white-space:pre-wrap;word-wrap:break-word;overflow:hidden;
+  background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 21px,#000 21px,#000 22px)}
+.sg{display:flex;flex-direction:column;gap:16px;margin-top:28px}
+.sg .hr{font-size:15px}
+.sg .big{font-size:16px}
+.sg .ln img{position:absolute;left:6px;bottom:1px;height:34px;max-width:95%;object-fit:contain;object-position:left bottom}
+
+@media print{
+  @page{size:letter;margin:.3in}
+  html,body{background:#fff!important}
+  body>*:not(#print-root){display:none!important}
+  #print-root{display:block}
+  #print-root .page{width:auto;height:10.3in;padding:.05in .2in;break-after:page;page-break-after:always;overflow:hidden}
+  #print-root .page:last-child{break-after:auto;page-break-after:auto}
+  .pen,.ln{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><h1>City Driver Evaluation</h1><span id="saved">Saved on this device</span></div>
+  <div class="who">
+    <select id="tsel" aria-label="Driver in training"></select>
+    <button class="btn" id="tnew">+ New</button>
+  </div>
+  <nav class="days" id="days" role="tablist" aria-label="Evaluation day"></nav>
+</header>
+
+<main id="main"></main>
+
+<footer class="bar">
+  <button class="btn" id="pvBtn">Preview</button>
+  <button class="btn primary" id="prBtn">Print Day 1</button>
+</footer>
+
+<div class="ov" id="ov" hidden>
+  <div class="ov-bar">
+    <button class="btn" id="ovClose">← Back</button>
+    <span class="sp"></span>
+    <button class="btn" id="ovAll">Print all 5 days</button>
+    <button class="btn primary" id="ovDay">Print day</button>
+  </div>
+  <div class="pv" id="pv"></div>
+</div>
+
+<div class="modal" id="modal" hidden><div class="card"><h2 id="mTitle"></h2><p id="mText"></p><div class="row" style="justify-content:flex-end"><button class="btn" id="mNo">Cancel</button><button class="btn danger" id="mYes">Delete</button></div></div></div>
+<input type="file" id="logoIn" accept="image/*" hidden>
+<input type="file" id="impIn" accept="application/json,.json" hidden>
+<div id="print-root"></div>
+
+<script>
+/* =================== FORM CONTENT (taken from the paper forms) =================== */
+const VIO=["Uses seat belt","Starts vehicle properly","Does not allow vehicle to roll while stopped","Steers smoothly","Observes traffic patterns","Drives with both hands on steering wheel(Best practice, not mandatory)","Speed appropriate for conditions","Gets out and look before backing G.O.A.L","Properly positions for straight-Line","Performs Visual check for clearance","Properly backs into tight spots","Uses mirrors properly","Avoids Backing when possible","Does not blind side back","Covers the brake with foot in intersections/horn","Stops vehicle in proper location","Looks Left-Right-Left at intersections","Checks traffic in all directions","Vehicle in proper lane for turn","Approaches turn at proper speed","Turns only when traffic is cleared","Signals used in advance of turn","Checks traffic conditions","Maintains correct lane while turning/remains in lane to build speed","Determines that pass is safe and legal","Yields when appropriate","Checks ahead before passing","Does not exceed speed limit","Does not drive distracted","Does NOT use a handheld device or cell phone"];
+const PRE=["General vehicle condition noted (Clean & Organized?)","Parking brake set/applied","Steering mechanism","Lighting devices and reflectors","Brakes ABS trailer light or Dolly light ON","Tires","Horn","Windshield wipers","Mirrors","Coupling devices","Wheels/rims","Check for air leaks","360 walk around performed","Cords not rubbing on catwalk","Pre-Trip Inspection properly entered into eDVIR for all equipment","Checked load for proper blocking and bracing","Hand truck and pallet jack secured within trailer","Federal Motor Carries Handbook(GREEN) within cab","Federal Hazmat book (RED) within cab"];
+const HOOK=["Proper Hooking and Dropping of trailer(s)","Proper use of nose stands when dropping trailer at the loading dock"];
+const DD="DEFENSIVE DRIVING", BK="DEFENSIVE DRIVING (BACKING)";
+const SECTIONS={
+ appearance:{t:"APPEARANCE",na:1,items:["Full uniform compliance","Black steel toe shoes(City, Line haul must have available)","Company badge worn & clearly visible","Appears rested and prepared for work","Proper clothing for weather related issue (Raincoat, jacket, etc.)"]},
+ policies:{t:"Policies",items:["Saia Dress Code Policy","Fueling Policy","Yard Policy","Cell Phone/Hand Held/Bluetooth","Open Door Policy","Smoking Policy","Accident Policy"]},
+ permit:{t:"Permit Box",items:["Permits","Insurance Card","Fuses"]},
+ incab1:{t:"REQUIRED IN-CAB ITEMS",items:["Spare Logs(At least 8 days’ worth)","ERG Book (ORANGE) Within arm’s reach","Fire Extinguisher (Filled and securely mounted)","Warning Triangles"]},
+ incab2:{t:"REQUIRED IN-CAB ITEMS",items:["Spare Logs(At least 8 days’ worth)","ERG Book (ORANGE) Within arm’s reach","Fire Extinguisher (Filled (IN THE GREEN) and securely mounted)","Warning Triangles"]},
+ hos7:{t:"HOURS OF SERVICE",items:["Understands how to log into Samsara","Enters all equipment information into Samsara and complete pre/post inspection","Understands how to review the available hours and graph grid","Understand how to access HOS Exceptions","Understands requirements for all HOS Exceptions","Understands how to properly log out of Samsara","Understands how to access the \"roadside inspection\" menu and electronic documents"]},
+ hos5:{t:"HOURS OF SERVICE",items:["Understands how to log into Samsara","Enters all equipment information into Samsara and complete a pre/post inspection","Understands how to review the available hours and graph grid","Understands how to properly log out of Samsara","Understands how to access the \"roadside inspection\" menu and electronic documents"]},
+ hos4:{t:"HOURS OF SERVICE",items:["Understands how to log into Samsara","Enters all equipment information into Samsara and complete pre/post inspection","Understands how to review the available hours and graph grid","Understands how to properly log out of Samsara"]},
+ pre21:{t:"PRE-TRIP INSPECTION",items:PRE.concat(HOOK)},
+ pre19:{t:"PRE-TRIP INSPECTION",items:PRE},
+ hazmat:{t:"HAZMAT",na:1,items:["Proper Placards affixed to the trailer","BOL for all hazardous material shipments","Required items on shipping papers (ISHIP)","Orange Hazardous materials tab on the movement document(s)","Hazmat paperwork separated from non-hazardous paperwork and on top"]},
+ vio:{t:"VEHICLE IN OPERATION",items:VIO},
+ injury:{t:"INJURY PREVENTION",na:1,items:["3 Points of contact when entering and exiting tractor","3 Points of contact when entering and exiting trailer","Push NOT Pull pallet jack","Proper use of hand truck","Gloves available & used when required","Proper handling of converter gear (never grab gear by the eye)","Proper lifting (Lift with legs, NOT back)"]},
+ comm7:{t:"COMMUNICATION",items:["Where to find Monthly News Letter","SAIA Connect (How to use)","Order Uniforms","How to set up vacation days","How to dispatch on Time clock","How to dispatch via IVR","Has acquired a Class A CDL, HAZMAT Endorsements, and DOT Medical Card within 10 days"]},
+ comm2:{t:"COMMUNICATION",items:["How to dispatch on Time clock","How to dispatch via IVR"]},
+ paper:{t:"PAPERWORK PROFICIENCY",na:1,items:["Completing BOL","OS&D Procedures & OS&D #1-888-400-7006","Reading freight bills","Driver Radio use( CITY)","Making a residential delivery"]},
+ post:{t:"POST-TRIP INSPECTION",items:["Tractor cleaned out","Trailer properly dropped and secured","Pallet jack and hand truck removed and put away properly","Tires(Inflation, adequate tread)","Leaks (look underneath) Oil, Fuel","Gauges (Fuel, Temperature, Dashboard warning lights)","Lighting system (Head, brake, turn, hazard, reflectors, ABS)","Trailer (Brake connections, king pin, door, landing gear, tires, wheels, lug nuts)","Windshield wipers","Fans & defrost","Air leaks","Mirrors","Horns","Exhaust system","Seat belt"]},
+ misc1:{t:"MISCELLANEOUS",na:1,items:["Understands proper reporting (Accidents, injuries, incidents)","Chemical release procedures","Important phone numbers provided (Line haul, Safety 800#, Breakdown)"]},
+ misc2:{t:"MISCELLANEOUS",na:1,items:HOOK},
+ lift:{t:"LIFT GATE",na:1,items:["Demonstrates Lift gate inspection","Understands the hazards associated with lift gate edge(s)","Understands the hazards associated with lift gate pinch points","Demonstrates how to use the lift gate properly"]},
+ dd1:{t:DD,items:["Looks ahead in travel path (Minimum 15 seconds)","Centers vehicle in traffic lane at all times","Sees and evaluates relevant information from among distant objects","Adjusts eye lead distance to speed","Eyes properly elevated around turns and corner","Makes smooth, safe turns, and centered in traffic lane"]},
+ bk1:{t:BK,items:["Upon arrival, starts scanning the whole environment","Aims high with eyes to detect hazards (Cables, Branches, building overhangs)","Watched for any changes in surrounding as approaching stopping point","Whenever possible, avoids backing"]},
+ dd2:{t:DD,items:["Following distance consistently appropriate for conditions","Eliminate Vision barriers by maintaining distance","Makes and executes decisions early","Avoids being unnecessarily boxed in","Speeds is neither too fast nor too slow for conditions"]},
+ bk2:{t:BK,items:["Gathers details about backing site, before backing","When in doubt, Get Out and Look (G.O.A.L)","Slowly backs the vehicle/Trailer(s)"]},
+ dd3:{t:DD,items:["Scans mirrors frequently","Scans major and minor intersections before entry","Moves eyes at least every two seconds","Checks mirrors prior to slowing or stopping the vehicle","Avoids staring while evaluating relevant objects"]},
+ bk3:{t:BK,items:["Avoids staring at one object","Maximizes full range of central and peripheral vision by scanning entire area","Slowly backs the vehicle/Trailer(s)"]},
+ dd4:{t:DD,items:["Maintains proper space around the vehicle","Adjusts space to avoid unsafe intrusion by other drivers","When stopped, leaves appropriate space in front of vehicle","Consistently selects lanes to minimize danger and maximize space & visibility"]},
+ bk4:{t:BK,items:["When backing is unavoidable, site with the fewest hazards is chosen","Cuts no closer to other objects then needed","Backs only as far as needed"]},
+ dd5:{t:DD,items:["Seeks eye contact and communicates when conditions suggest the need","Uses turn signals","Brakes early to activate brake lights","Sounds horn when conditions suggest the need"]},
+ bk5:{t:BK,items:["Seeks eye contact before backing","Lightly taps horn prior to backing","Uses the vehicles warning devices and/or hand signals when needed"]},
+ review:{t:"DEFENSIVE DRIVING REVIEW",noHead:1,bold:1,items:["REVIEW ALL DEFENSIVE DRIVING TOPICS (REFERENCE DAY 1-5 OF TRAINING)"]}
+};
+const N1="**EXPLAIN HOW TO DO IT & WHAT IT DOES FOR YOU**";
+const NL="**If not utilizing a lift gate trailer- take some time to review the below items and plan a hands on review with a lift gate**";
+/* Page-by-page layout of each day, matching the printed packet */
+const LAYOUT={
+ 1:[["H","R","appearance","policies","permit","incab1"],["injury","comm7","paper","post","misc1"],["vio","dd1","N1","bk1"],["hos7","pre21","hazmat"],["C"]],
+ 2:[["H","R","appearance","permit","incab2","hos5"],["pre19","hazmat",{k:"vio",from:0,to:21}],[{k:"vio",from:21},"dd2","N1","bk2","injury","comm2"],["paper","post","misc2","NL","lift"],["C"]],
+ 3:[["H","R","appearance","permit","incab2","hos5"],["pre19","hazmat",{k:"vio",from:0,to:22}],[{k:"vio",from:22},"dd3","bk3","injury","comm2","paper"],["post","C"]],
+ 4:[["H","R","appearance","permit","incab2","hos4"],["pre19","hazmat",{k:"vio",from:0,to:22}],[{k:"vio",from:22},"dd4","N1","bk4","injury","comm2","paper"],["post","C"]],
+ 5:[["H","R","appearance","permit","incab2","hos4"],["pre19","hazmat",{k:"vio",from:0,to:22}],[{k:"vio",from:22},"dd5","N1","bk5","review","injury","comm2","paper"],["post","C"]]
+};
+const DAY_TOPIC={1:"Aim high",2:"Get the big picture",3:"Keep your eyes moving",4:"Leave yourself an out",5:"Make sure they see you"};
+const REASONS=[["new","New Hire/ Dock to Driver"],["accident","Accident"],["remedial","Remedial/ For what purpose?"]];
+const CMTS=[["well","Tasks performed well that should be continued:"],["improve","Tasks performed OK but could be improved:"],["notOk","Task not performed at all or not acceptable, and should be stopped or corrected:"],["driverEval","Driver Evaluations of above statements what they have learned and can improve upon:"]];
+const lineCount=d=>d<=2?[4,4,4,4]:[4,4,3,4];
+const CHARS_PER_LINE=95;
+
+/* =================== STATE =================== */
+const KEY="city-driver-eval-v1";
+const INFO=[["driverName","Driver Name"],["driverNum","Driver #"],["terminal","Terminal"],["driverClass","Driver Class"],["trainerName","Driver Trainer Name"],["trainerEmp","Driver Trainer Emp#"],["employeeNum","Employee # (signature)"],["managerName","Managers Name"]];
+let st=null;
+try{st=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!st||!Array.isArray(st.trainees)) st={trainees:[],cur:null,day:1,logo:null,lastInfo:{}};
+if(!st.trainees.length) addTrainee();
+let saveT=null;
+function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(st));el("saved").textContent="Saved on this device"}catch(e){el("saved").textContent="Couldn't save"}},250)}
+function uid(){return Math.random().toString(36).slice(2,9)}
+function addTrainee(){
+  const li=st.lastInfo||{};
+  const t={id:uid(),created:Date.now(),info:{trainerName:li.trainerName||"",trainerEmp:li.trainerEmp||"",terminal:li.terminal||"",managerName:li.managerName||""},days:{}};
+  st.trainees.push(t);st.cur=t.id;st.day=1;return t;
+}
+const T=()=>st.trainees.find(t=>t.id===st.cur)||st.trainees[0];
+function D(d){const t=T();if(!t.days[d])t.days[d]={r:{},c:{}};const x=t.days[d];x.r=x.r||{};x.c=x.c||{};return x}
+
+/* =================== HELPERS =================== */
+const el=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=v=>{if(!v)return"";const[y,m,d]=v.split("-");return`${m}/${d}/${y}`};
+const today=()=>{const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`};
+const keyOf=b=>typeof b==="string"?b:b.k;
+function fillSections(d){const seen=new Set(),out=[];LAYOUT[d].flat().forEach(b=>{const k=keyOf(b);if(SECTIONS[k]&&!seen.has(k)){seen.add(k);out.push(k)}});return out}
+function progress(d){const t=T(),r=(t.days[d]||{}).r||{};let tot=0,done=0;fillSections(d).forEach(k=>SECTIONS[k].items.forEach((_,i)=>{tot++;if(r[k+"."+i])done++}));return{tot,done}}
+function toast(msg){const n=document.createElement("div");n.className="toast";n.textContent=msg;document.body.appendChild(n);setTimeout(()=>n.remove(),1800)}
+
+/* =================== APP UI =================== */
+function renderTop(){
+  el("tsel").innerHTML=st.trainees.map(t=>`<option value="${t.id}"${t.id===st.cur?" selected":""}>${esc(t.info.driverName||"Unnamed driver")}${t.info.driverNum?" · #"+esc(t.info.driverNum):""}</option>`).join("");
+  el("days").innerHTML=[1,2,3,4,5].map(d=>{const p=progress(d);return`<button class="day" role="tab" data-day="${d}" aria-selected="${d===st.day}" style="--p:${p.tot?Math.round(p.done/p.tot*100):0}%"><b>Day ${d}</b><small>${p.done}/${p.tot}</small><i></i></button>`}).join("");
+  el("prBtn").textContent=`Print Day ${st.day}`;
+}
+function updProgress(){
+  document.querySelectorAll(".day").forEach(b=>{const d=+b.dataset.day,p=progress(d);b.style.setProperty("--p",(p.tot?Math.round(p.done/p.tot*100):0)+"%");b.querySelector("small").textContent=`${p.done}/${p.tot}`});
+  document.querySelectorAll("[data-sec]").forEach(c=>{const k=c.dataset.sec,r=D(st.day).r,n=SECTIONS[k].items.length,dn=SECTIONS[k].items.filter((_,i)=>r[k+"."+i]).length;const s=c.querySelector(".cnt");s.textContent=`${dn}/${n}`;s.classList.toggle("done",dn===n)});
+}
+function infoSummary(i){const bits=[i.driverName,i.driverNum&&("#"+i.driverNum),i.terminal,i.trainerName&&("Trainer: "+i.trainerName)].filter(Boolean);return bits.length?esc(bits.join(" · ")):"Enter the driver and trainer names"}
+function segBtns(k,v,na){return`<div class="seg" data-k="${k}"><button data-v="S" class="${v==="S"?"on":""}" aria-label="Satisfactory">Sat.</button><button data-v="NI" class="${v==="NI"?"on":""}" aria-label="Needs Improvement">NI</button>${na?`<button data-v="NA" class="${v==="NA"?"on":""}" aria-label="N/A">N/A</button>`:""}</div>`}
+function optBtns(field,opts,cur){return`<div class="opt">${opts.map(([v,l])=>`<button data-dv="${field}" data-val="${v}" class="${cur===v?"on":""}">${esc(l)}</button>`).join("")}</div>`}
+
+function renderMain(){
+  const t=T(),d=st.day,day=D(d),i=t.info;
+  let h=`<details class="card" id="infoCard"${i.driverName?"":" open"}><summary>Driver</summary><div class="sum-line" id="infoSum">${infoSummary(i)}</div><div class="grid">${INFO.map(([f,l])=>`<label class="f">${l}<input id="i-${f}" data-i="${f}" value="${esc(i[f])}" autocomplete="off"></label>`).join("")}</div><p class="note" style="margin-top:10px">This info is used on all 5 days.</p></details>`;
+  h+=`<section class="card"><h2>Day ${d} · ${DAY_TOPIC[d]}</h2><div class="grid wide">
+    <label class="f">Date<span class="row"><input type="date" id="d-date" data-d="date" value="${esc(day.date)}"><button class="btn small" data-today="d-date">Today</button></span></label>
+    <label class="f">Vehicle #<input id="d-vehicle" data-d="vehicle" value="${esc(day.vehicle)}" inputmode="numeric"></label></div>
+    <div class="lbl">Automatic/Manual?</div>${optBtns("trans",[["Automatic","Automatic"],["Manual","Manual"]],day.trans)}
+    <div class="lbl">Reason for performance evaluation ride</div>${optBtns("reason",REASONS,day.reason)}
+    <label class="f" style="margin-top:10px">Remedial purpose or other note<input id="d-purpose" data-d="purpose" value="${esc(day.purpose)}"></label></section>`;
+  fillSections(d).forEach(k=>{const s=SECTIONS[k];
+    h+=`<section class="card" data-sec="${k}"><div class="sec-h"><h2>${esc(s.t)}</h2><span class="cnt"></span></div>`;
+    if(k.startsWith("dd")) h+=`<p class="note">${esc(N1.replace(/\*/g,""))}</p>`;
+    if(k==="lift") h+=`<p class="note">${esc(NL.replace(/\*/g,""))}</p>`;
+    h+=`<div class="items">${s.items.map((it,j)=>`<div class="it"><p>${esc(it)}</p>${segBtns(k+"."+j,day.r[k+"."+j],s.na)}</div>`).join("")}</div>
+      <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn small" data-all="${k}">Mark the rest Satisfactory</button></div></section>`;
+  });
+  const lc=lineCount(d);
+  h+=`<section class="card"><h2>Comments</h2>${CMTS.map(([f,l],j)=>`<label class="f" style="margin-top:12px">${esc(l)}<textarea id="c-${f}" data-c="${f}" maxlength="${lc[j]*CHARS_PER_LINE}">${esc(day.c[f])}</textarea></label><div class="hint" data-hint="${f}">${(day.c[f]||"").length}/${lc[j]*CHARS_PER_LINE}</div>`).join("")}</section>`;
+  h+=`<section class="card"><h2>Signature</h2><div class="lbl">Driver signature</div><div class="sigbox"><canvas id="sig"></canvas><span>Sign here with your finger</span></div>
+    <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn small" id="sigClr">Clear signature</button></div>
+    <div class="grid wide"><label class="f">Date (driver)<span class="row"><input type="date" id="d-sigDate" data-d="sigDate" value="${esc(day.sigDate)}"><button class="btn small" data-today="d-sigDate">Today</button></span></label>
+    <label class="f">Date (manager)<span class="row"><input type="date" id="d-mgrDate" data-d="mgrDate" value="${esc(day.mgrDate)}"><button class="btn small" data-today="d-mgrDate">Today</button></span></label></div></section>`;
+  h+=`<section class="card"><h2>Options</h2><p class="note">The logo prints at the top right of the first page of each day.</p><div class="opt">
+    <button id="logoBtn">${st.logo?"Change logo":"Add logo"}</button>${st.logo?`<button id="logoDel">Remove logo</button>`:""}
+    <button id="expBtn">Back up data</button><button id="impBtn">Restore backup</button><button id="delBtn" style="color:#b3261e">Delete this driver</button></div></section>`;
+  el("main").innerHTML=h;
+  updProgress();initSig();
+}
+function renderAll(){renderTop();renderMain()}
+
+/* events */
+el("days").addEventListener("click",e=>{const b=e.target.closest(".day");if(!b)return;st.day=+b.dataset.day;save();renderAll();window.scrollTo({top:0})});
+el("tsel").addEventListener("change",e=>{st.cur=e.target.value;save();renderAll()});
+el("tnew").addEventListener("click",()=>{addTrainee();save();renderAll();el("i-driverName")?.focus()});
+el("main").addEventListener("click",e=>{
+  const sb=e.target.closest(".seg button");
+  if(sb){const k=sb.parentElement.dataset.k,v=sb.dataset.v,r=D(st.day).r;if(r[k]===v)delete r[k];else r[k]=v;sb.parentElement.querySelectorAll("button").forEach(x=>x.classList.toggle("on",r[k]===x.dataset.v));save();updProgress();return}
+  const ob=e.target.closest("[data-dv]");
+  if(ob){const day=D(st.day),f=ob.dataset.dv,v=ob.dataset.val;day[f]=day[f]===v?"":v;ob.parentElement.querySelectorAll("button").forEach(x=>x.classList.toggle("on",day[f]===x.dataset.val));save();return}
+  const ab=e.target.closest("[data-all]");
+  if(ab){const k=ab.dataset.all,r=D(st.day).r;SECTIONS[k].items.forEach((_,i)=>{if(!r[k+"."+i])r[k+"."+i]="S"});ab.closest("[data-sec]").querySelectorAll(".seg").forEach(s=>s.querySelectorAll("button").forEach(x=>x.classList.toggle("on",r[s.dataset.k]===x.dataset.v)));save();updProgress();return}
+  const tb=e.target.closest("[data-today]");
+  if(tb){e.preventDefault();const inp=el(tb.dataset.today);inp.value=today();inp.dispatchEvent(new Event("input",{bubbles:true}));return}
+  if(e.target.id==="sigClr"){D(st.day).sig="";initSig();save();return}
+  if(e.target.id==="logoBtn"){el("logoIn").click();return}
+  if(e.target.id==="logoDel"){st.logo=null;save();renderMain();return}
+  if(e.target.id==="expBtn"){exportData();return}
+  if(e.target.id==="impBtn"){el("impIn").click();return}
+  if(e.target.id==="delBtn"){askDelete();return}
+});
+el("main").addEventListener("input",e=>{
+  const x=e.target,t=T();
+  if(x.dataset.i){t.info[x.dataset.i]=x.value;if(["trainerName","trainerEmp","terminal","managerName"].includes(x.dataset.i)){st.lastInfo=st.lastInfo||{};st.lastInfo[x.dataset.i]=x.value}el("infoSum").innerHTML=infoSummary(t.info);renderTop()}
+  else if(x.dataset.d){D(st.day)[x.dataset.d]=x.value}
+  else if(x.dataset.c){D(st.day).c[x.dataset.c]=x.value;const h=document.querySelector(`[data-hint="${x.dataset.c}"]`);if(h)h.textContent=`${x.value.length}/${x.maxLength}`}
+  else return;
+  save();
+});
+el("logoIn").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const img=new Image(),rd=new FileReader();rd.onload=()=>{img.onload=()=>{const c=document.createElement("canvas"),m=400,s=Math.min(1,m/Math.max(img.width,img.height));c.width=img.width*s;c.height=img.height*s;c.getContext("2d").drawImage(img,0,0,c.width,c.height);st.logo=c.toDataURL("image/png");save();renderMain();toast("Logo saved")};img.src=rd.result};rd.readAsDataURL(f);e.target.value=""});
+function exportData(){const blob=new Blob([JSON.stringify(st)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`driver-eval-backup-${today()}.json`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+el("impIn").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const s=JSON.parse(rd.result);if(!Array.isArray(s.trainees))throw 0;const ids=new Set(st.trainees.map(t=>t.id));s.trainees.forEach(t=>{if(ids.has(t.id))st.trainees=st.trainees.map(x=>x.id===t.id?t:x);else st.trainees.push(t)});if(s.logo&&!st.logo)st.logo=s.logo;save();renderAll();toast("Backup restored")}catch(err){toast("That file isn't a valid backup")}};rd.readAsText(f);e.target.value=""});
+function askDelete(){const t=T();el("mTitle").textContent="Delete this driver?";el("mText").textContent=`All 5 days for ${t.info.driverName||"this driver"} will be deleted. This can't be undone.`;el("modal").hidden=false}
+el("mNo").onclick=()=>el("modal").hidden=true;
+el("mYes").onclick=()=>{st.trainees=st.trainees.filter(t=>t.id!==st.cur);if(!st.trainees.length)addTrainee();st.cur=st.trainees[0].id;el("modal").hidden=true;save();renderAll();toast("Driver deleted")};
+
+/* signature pad */
+function initSig(){
+  const c=el("sig");if(!c)return;const dpr=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
+  c.width=w*dpr;c.height=h*dpr;const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.lineWidth=2.4;g.lineCap="round";g.lineJoin="round";g.strokeStyle="#14306e";
+  const day=D(st.day);if(day.sig){const im=new Image();im.onload=()=>g.drawImage(im,0,0,w,h);im.src=day.sig}
+  c.nextElementSibling.hidden=!!day.sig;
+  let drawing=false,last=null;
+  const pt=e=>{const r=c.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
+  c.onpointerdown=e=>{drawing=true;last=pt(e);c.setPointerCapture(e.pointerId);c.nextElementSibling.hidden=true;g.beginPath();g.arc(last[0],last[1],1.1,0,7);g.fillStyle="#14306e";g.fill()};
+  c.onpointermove=e=>{if(!drawing)return;const p=pt(e);g.beginPath();g.moveTo(last[0],last[1]);g.lineTo(p[0],p[1]);g.stroke();last=p};
+  c.onpointerup=c.onpointercancel=()=>{if(!drawing)return;drawing=false;day.sig=c.toDataURL("image/png");save()};
+}
+
+/* =================== PRINTED SHEETS =================== */
+const CK='<svg viewBox="0 0 16 14" aria-hidden="true"><path d="M1.5 7.5 6 12 14.5 1.5" fill="none" stroke="#14306e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const v=s=>esc(s||"");
+function pHeader(d,t,day){
+  const i=t.info,title=d===1?"City Driver Evaluation- Day 1":`City Driver Evaluation Day ${d}`;
+  return`<div class="hd">${st.logo?`<img class="lg" src="${st.logo}" alt="">`:""}
+  <div class="hr r1"><b>Date</b>:<span class="ln w16">${v(fmt(day.date))}</span></div>
+  <div class="ttl">${title}</div>
+  <div class="hr"><b>Driver Name:</b><span class="ln f">${v(i.driverName)}</span><b>&nbsp;Driver #</b><span class="ln w26">${v(i.driverNum)}</span></div>
+  <div class="hr"><b>Terminal:</b><span class="ln f">${v(i.terminal)}</span><b>&nbsp;&nbsp;Driver Class:</b><span class="ln f">${v(i.driverClass)}</span></div>
+  <div class="hr"><b>Driver Trainer Name:</b><span class="ln f">${v(i.trainerName)}</span><b>Driver Trainer Emp#</b><span class="ln w18">${v(i.trainerEmp)}</span></div>
+  <div class="hr"><b>Vehicle #:</b><span class="ln w22">${v(day.vehicle)}</span><b>Automatic/Manual?</b>${day.trans?`<span class="pen" style="font-size:15px;margin-left:4px">${v(day.trans)}</span>`:""}<small>(Trainee will need at minimum 1 day of training with a manual transmission)</small></div></div>`;
+}
+function pReason(day){
+  return`<table class="ft rs"><colgroup><col style="width:82%"><col></colgroup><tr class="th"><th colspan="2">REASON FOR PERFORMANCE EVALUATION RIDE</th></tr>
+  ${REASONS.map(([k,l])=>`<tr><td class="it">${l}</td><td class="ck">${day.reason===k?CK:""}</td></tr>`).join("")}
+  <tr><td colspan="2" class="it pen">${v(day.purpose)}</td></tr></table>`;
+}
+function pSection(k,day,from=0,to,cont){
+  const s=SECTIONS[k],items=s.items.slice(from,to);
+  const cols=s.na?'<col style="width:67.5%"><col style="width:11%"><col style="width:12.5%"><col>':'<col style="width:67.5%"><col style="width:16%"><col>';
+  let h=`<table class="ft${s.bold?" rv":""}"><colgroup>${cols}</colgroup>`;
+  if(!cont&&!s.noHead)h+=`<tr class="th"><th>${s.t}</th><th>Satisfactory</th><th>Needs<br>Improvement</th>${s.na?"<th>N/A</th>":""}</tr>`;
+  items.forEach((it,j)=>{const r=day.r[k+"."+(from+j)];h+=`<tr><td class="it">${esc(it)}</td><td class="ck">${r==="S"?CK:""}</td><td class="ck">${r==="NI"?CK:""}</td>${s.na?`<td class="ck">${r==="NA"?CK:""}</td>`:""}</tr>`});
+  return h+"</table>";
+}
+function pComments(d,t,day){
+  const lc=lineCount(d),i=t.info,img=day.sig?`<img src="${day.sig}" alt="">`:"";
+  return`<div class="cm">${CMTS.map(([f,l],j)=>`<div class="cl${d===1?" n":""}"><b>${l}</b><div class="lines pen" style="height:${lc[j]*22}px">${v(day.c[f])}</div></div>`).join("")}</div>
+  <div class="sg">
+   <div class="hr"><b class="big">Drivers Name</b><span class="ln w30">${v(i.driverName)}</span><span>Signature</span><span class="ln f">${img}</span></div>
+   <div class="hr"><span>Employee #</span><span class="ln w30">${v(i.employeeNum||i.driverNum)}</span><span>&nbsp;&nbsp;Date:</span><span class="ln w26">${v(fmt(day.sigDate))}</span></div>
+   <div class="hr"><span>Managers Name</span><span class="ln w44">${v(i.managerName)}</span></div>
+   <div class="hr"><span>Date:</span><span class="ln w44">${v(fmt(day.mgrDate))}</span></div></div>`;
+}
+function buildPages(days){
+  const t=T();let h="";
+  days.forEach(d=>{const day=D(d);LAYOUT[d].forEach(blocks=>{
+    h+=`<section class="page"><div class="pc">`;
+    blocks.forEach(b=>{
+      if(b==="H")h+=pHeader(d,t,day);
+      else if(b==="R")h+=pReason(day);
+      else if(b==="C")h+=pComments(d,t,day);
+      else if(b==="N1")h+=`<div class="pnote">${N1}</div>`;
+      else if(b==="NL")h+=`<div class="pnote lg">${NL}</div>`;
+      else if(typeof b==="object")h+=pSection(b.k,day,b.from,b.to,b.from>0);
+      else h+=pSection(b,day);
+    });
+    h+=`</div><div class="pf">City Driver Evaluation- Day ${d}</div></section>`;
+  })});
+  return h;
+}
+function openPreview(){
+  const pv=el("pv");pv.innerHTML=buildPages([st.day]);el("ov").hidden=false;el("ovDay").textContent=`Print Day ${st.day}`;
+  const s=Math.min(1,(pv.clientWidth-32)/816);
+  pv.querySelectorAll(".page").forEach(p=>{const w=document.createElement("div");w.className="pw";w.style.width=816*s+"px";w.style.height=1056*s+"px";p.parentNode.insertBefore(w,p);w.appendChild(p);p.style.transform=`scale(${s})`});
+}
+function doPrint(days){el("print-root").innerHTML=buildPages(days);setTimeout(()=>window.print(),60)}
+el("pvBtn").onclick=openPreview;
+el("prBtn").onclick=()=>doPrint([st.day]);
+el("ovClose").onclick=()=>{el("ov").hidden=true;el("pv").innerHTML=""};
+el("ovDay").onclick=()=>doPrint([st.day]);
+el("ovAll").onclick=()=>doPrint([1,2,3,4,5]);
+window.addEventListener("resize",()=>{if(!el("ov").hidden)openPreview()});
+
+renderAll();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
+</script>
+</body>
+</html>
