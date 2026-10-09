@@ -14,8 +14,10 @@
 <title>City Driver Evaluation</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=Carlito:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
 <style>
+@font-face{font-family:"CarlitoForm";src:url("fonts/carlito-latin-400-normal.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"CarlitoForm";src:url("fonts/carlito-latin-700-normal.woff2") format("woff2");font-weight:700;font-display:swap}
 /* Layout: clipboard-style mobile app — sticky day tabs on top, section cards, fixed action bar; print sheets are a separate black-on-white letter layout */
 :root{
   --bg:#eceff2; --card:#ffffff; --ink:#16212c; --mute:#5c6874; --line:#d3d9e0;
@@ -23,7 +25,7 @@
   --ok:#1e7a4c; --okbg:#ddf1e5; --warn:#a65d0c; --warnbg:#fbecd6; --na:#4f5b67; --nabg:#e4e8ec;
   --f-disp:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --f-form:"Carlito",Calibri,"Segoe UI",Arial,sans-serif;
+  --f-form:"CarlitoForm",Carlito,Calibri,"Segoe UI",Arial,sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
@@ -117,6 +119,7 @@ textarea{resize:vertical;min-height:84px}
 .modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:grid;place-items:center;padding:16px}
 .modal .card{max-width:360px;width:100%}
 .modal p{margin:8px 0 14px}
+#pdf-stage{position:fixed;left:-10000px;top:0;width:816px;background:#fff}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:14px;z-index:70}
 
 /* ---------- Printed form (always black on white) ---------- */
@@ -130,14 +133,14 @@ table.ft td,table.ft th{border:1px solid #000;padding:0 7px;height:17px;vertical
 table.ft{border:1.6px solid #000}
 table.ft tr.th th{height:36px;font-weight:700;text-align:center;font-size:13.2px;line-height:1.15;padding:2px 4px}
 table.ft td.ck{text-align:center;padding:0}
-table.ft td.ck svg{width:15px;height:13px;vertical-align:middle}
+table.ft td.ck .ckm{display:inline-block;width:6px;height:11px;border:solid #14306e;border-width:0 2.6px 2.6px 0;transform:rotate(45deg);margin-top:-3px}
 table.ft td.it{white-space:nowrap;overflow:hidden}
 table.rs tr.th th{height:20px}
 table.rv td{font-weight:700;height:24px}
 .pnote{text-align:center;font-weight:700;font-size:13.5px;margin:-4px 0}
 .pnote.lg{font-family:Arial,Helvetica,sans-serif;font-weight:400;font-size:13.5px}
 .hd{position:relative;display:flex;flex-direction:column;gap:13px;padding-right:.1in;margin-bottom:2px}
-.hd .lg{position:absolute;right:-.1in;top:-.05in;width:1.3in;height:1.3in;object-fit:contain}
+.hd .lg{position:absolute;right:-.1in;top:-.05in;max-width:1.3in;max-height:1.3in;width:auto;height:auto}
 .hr{display:flex;align-items:flex-end;gap:4px;font-size:16px;white-space:nowrap}
 .hr b{font-weight:700}
 .ln{display:inline-block;border-bottom:1px solid #000;height:20px;line-height:20px;padding:0 4px;overflow:hidden;text-overflow:clip;position:relative;font-family:var(--f-form);font-size:15px;color:#14306e;font-weight:700}
@@ -149,12 +152,13 @@ table.rv td{font-weight:700;height:24px}
 .cm{display:flex;flex-direction:column;gap:14px}
 .cm .cl b{display:block;font-size:14.5px}
 .cm .cl.n b{font-weight:400}
-.lines{margin-top:2px;line-height:22px;font-size:14px;white-space:pre-wrap;word-wrap:break-word;overflow:hidden;
-  background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 21px,#000 21px,#000 22px)}
+.lines{position:relative;overflow:hidden;margin-top:2px}
+.lines i{position:absolute;left:0;right:0;height:1px;background:#000}
+.lines .tx{position:relative;line-height:22px;font-size:14px;white-space:pre-wrap;word-wrap:break-word}
 .sg{display:flex;flex-direction:column;gap:16px;margin-top:28px}
 .sg .hr{font-size:15px}
 .sg .big{font-size:16px}
-.sg .ln img{position:absolute;left:6px;bottom:1px;height:34px;max-width:95%;object-fit:contain;object-position:left bottom}
+.sg .ln img{position:absolute;left:6px;bottom:1px}
 
 @media print{
   @page{size:letter;margin:.3in}
@@ -197,6 +201,8 @@ table.rv td{font-weight:700;height:24px}
 </div>
 
 <div class="modal" id="modal" hidden><div class="card"><h2 id="mTitle"></h2><p id="mText"></p><div class="row" style="justify-content:flex-end"><button class="btn" id="mNo">Cancel</button><button class="btn danger" id="mYes">Delete</button></div></div></div>
+<div class="modal" id="pdfm" hidden><div class="card"><h2 id="pTitle">Preparing PDF</h2><p id="pText">Building the pages…</p><div class="row" style="justify-content:flex-end;flex-wrap:wrap" id="pBtns" hidden><button class="btn" id="pClose">Close</button><a class="btn" id="pOpen" target="_blank" rel="noopener" style="text-decoration:none">Open PDF</a><button class="btn primary" id="pShare">Share / Print</button></div></div></div>
+<div id="pdf-stage" aria-hidden="true"></div>
 <input type="file" id="logoIn" accept="image/*" hidden>
 <input type="file" id="impIn" accept="application/json,.json" hidden>
 <div id="print-root"></div>
@@ -341,7 +347,7 @@ el("main").addEventListener("click",e=>{
   if(ab){const k=ab.dataset.all,r=D(st.day).r;SECTIONS[k].items.forEach((_,i)=>{if(!r[k+"."+i])r[k+"."+i]="S"});ab.closest("[data-sec]").querySelectorAll(".seg").forEach(s=>s.querySelectorAll("button").forEach(x=>x.classList.toggle("on",r[s.dataset.k]===x.dataset.v)));save();updProgress();return}
   const tb=e.target.closest("[data-today]");
   if(tb){e.preventDefault();const inp=el(tb.dataset.today);inp.value=today();inp.dispatchEvent(new Event("input",{bubbles:true}));return}
-  if(e.target.id==="sigClr"){D(st.day).sig="";initSig();save();return}
+  if(e.target.id==="sigClr"){D(st.day).sig="";D(st.day).sigP=null;initSig();save();return}
   if(e.target.id==="logoBtn"){el("logoIn").click();return}
   if(e.target.id==="logoDel"){st.logo=null;save();renderMain();return}
   if(e.target.id==="expBtn"){exportData();return}
@@ -373,11 +379,11 @@ function initSig(){
   const pt=e=>{const r=c.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
   c.onpointerdown=e=>{drawing=true;last=pt(e);c.setPointerCapture(e.pointerId);c.nextElementSibling.hidden=true;g.beginPath();g.arc(last[0],last[1],1.1,0,7);g.fillStyle="#14306e";g.fill()};
   c.onpointermove=e=>{if(!drawing)return;const p=pt(e);g.beginPath();g.moveTo(last[0],last[1]);g.lineTo(p[0],p[1]);g.stroke();last=p};
-  c.onpointerup=c.onpointercancel=()=>{if(!drawing)return;drawing=false;day.sig=c.toDataURL("image/png");save()};
+  c.onpointerup=c.onpointercancel=()=>{if(!drawing)return;drawing=false;day.sig=c.toDataURL("image/png");day.sigP=null;save()};
 }
 
 /* =================== PRINTED SHEETS =================== */
-const CK='<svg viewBox="0 0 16 14" aria-hidden="true"><path d="M1.5 7.5 6 12 14.5 1.5" fill="none" stroke="#14306e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const CK='<i class="ckm"></i>';
 const v=s=>esc(s||"");
 function pHeader(d,t,day){
   const i=t.info,title=d===1?"City Driver Evaluation- Day 1":`City Driver Evaluation Day ${d}`;
@@ -403,8 +409,9 @@ function pSection(k,day,from=0,to,cont){
   return h+"</table>";
 }
 function pComments(d,t,day){
-  const lc=lineCount(d),i=t.info,img=day.sig?`<img src="${day.sig}" alt="">`:"";
-  return`<div class="cm">${CMTS.map(([f,l],j)=>`<div class="cl${d===1?" n":""}"><b>${l}</b><div class="lines pen" style="height:${lc[j]*22}px">${v(day.c[f])}</div></div>`).join("")}</div>
+  const lc=lineCount(d),i=t.info,sp=day.sigP;let img="";
+  if(day.sig&&sp&&sp.w){let h=34,w=h*sp.w/sp.h;if(w>300){w=300;h=w*sp.h/sp.w}img=`<img src="${sp.src}" alt="" style="width:${w.toFixed(1)}px;height:${h.toFixed(1)}px">`}
+  return`<div class="cm">${CMTS.map(([f,l],j)=>`<div class="cl${d===1?" n":""}"><b>${l}</b><div class="lines" style="height:${lc[j]*22}px">${Array.from({length:lc[j]},(_,n)=>`<i style="top:${n*22+21}px"></i>`).join("")}<div class="tx pen">${v(day.c[f])}</div></div></div>`).join("")}</div>
   <div class="sg">
    <div class="hr"><b class="big">Drivers Name</b><span class="ln w30">${v(i.driverName)}</span><span>Signature</span><span class="ln f">${img}</span></div>
    <div class="hr"><span>Employee #</span><span class="ln w30">${v(i.employeeNum||i.driverNum)}</span><span>&nbsp;&nbsp;Date:</span><span class="ln w26">${v(fmt(day.sigDate))}</span></div>
@@ -428,17 +435,58 @@ function buildPages(days){
   })});
   return h;
 }
-function openPreview(){
+function trimSig(src){return new Promise(res=>{const im=new Image();im.onload=()=>{const c=document.createElement("canvas");c.width=im.width;c.height=im.height;const g=c.getContext("2d");g.drawImage(im,0,0);const d=g.getImageData(0,0,c.width,c.height).data;let x0=c.width,y0=c.height,x1=-1,y1=-1;for(let y=0;y<c.height;y++)for(let x=0;x<c.width;x++)if(d[(y*c.width+x)*4+3]>20){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+  if(x1<0)return res(null);const p=6;x0=Math.max(0,x0-p);y0=Math.max(0,y0-p);x1=Math.min(c.width-1,x1+p);y1=Math.min(c.height-1,y1+p);const o=document.createElement("canvas");o.width=x1-x0+1;o.height=y1-y0+1;o.getContext("2d").drawImage(c,x0,y0,o.width,o.height,0,0,o.width,o.height);res({src:o.toDataURL("image/png"),w:o.width,h:o.height})};im.onerror=()=>res(null);im.src=src})}
+async function prepSigs(days){let ch=false;for(const d of days){const day=D(d);if(day.sig&&!day.sigP){day.sigP=await trimSig(day.sig);ch=true}}if(ch)save()}
+async function openPreview(){
+  await prepSigs([st.day]);
   const pv=el("pv");pv.innerHTML=buildPages([st.day]);el("ov").hidden=false;el("ovDay").textContent=`Print Day ${st.day}`;
   const s=Math.min(1,(pv.clientWidth-32)/816);
   pv.querySelectorAll(".page").forEach(p=>{const w=document.createElement("div");w.className="pw";w.style.width=816*s+"px";w.style.height=1056*s+"px";p.parentNode.insertBefore(w,p);w.appendChild(p);p.style.transform=`scale(${s})`});
 }
-function doPrint(days){el("print-root").innerHTML=buildPages(days);setTimeout(()=>window.print(),60)}
+function loadScript(src){return new Promise((res,rej)=>{const t=document.createElement("script");t.src=src;t.onload=res;t.onerror=()=>rej(new Error(src));document.head.appendChild(t)})}
+let libs=null;
+function loadLibs(){if(window.jspdf&&window.html2canvas)return Promise.resolve();return libs||(libs=Promise.all([loadScript("lib/jspdf.umd.min.js"),loadScript("lib/html2canvas.min.js")]).catch(e=>{libs=null;throw e}))}
+let pdfFile=null,pdfUrl=null,busy=false;
+function pdfMsg(title,text,done){el("pTitle").textContent=title;el("pText").textContent=text;el("pBtns").hidden=!done;el("pdfm").hidden=false}
+async function makePdf(days){
+  if(busy)return;busy=true;
+  pdfMsg("Preparing PDF","Building the pages…",false);
+  const stage=el("pdf-stage");
+  try{
+    await loadLibs();await prepSigs(days);
+    stage.innerHTML=buildPages(days);
+    if(document.fonts&&document.fonts.ready){await document.fonts.load('400 14px "CarlitoForm"');await document.fonts.load('700 14px "CarlitoForm"');await document.fonts.ready}
+    const pages=[...stage.querySelectorAll(".page")];
+    const doc=new window.jspdf.jsPDF({unit:"in",format:"letter",orientation:"portrait",compress:true});
+    for(let n=0;n<pages.length;n++){
+      el("pText").textContent=`Page ${n+1} of ${pages.length}…`;
+      await new Promise(r=>setTimeout(r,20));
+      const cv=await window.html2canvas(pages[n],{scale:2.5,backgroundColor:"#ffffff",logging:false,useCORS:true});
+      if(n)doc.addPage("letter","portrait");
+      doc.addImage(cv.toDataURL("image/jpeg",0.92),"JPEG",0,0,8.5,11,undefined,"FAST");
+      cv.width=cv.height=0;
+    }
+    const t=T(),nm=(t.info.driverName||"Driver").replace(/[^A-Za-z0-9]+/g,"-").replace(/^-|-$/g,"")||"Driver";
+    const fname=`City-Driver-Eval_${nm}_${days.length>1?"Days-1-5":"Day-"+days[0]}.pdf`;
+    const blob=doc.output("blob");
+    if(pdfUrl)URL.revokeObjectURL(pdfUrl);
+    pdfUrl=URL.createObjectURL(blob);pdfFile=new File([blob],fname,{type:"application/pdf"});
+    el("pOpen").href=pdfUrl;
+    const canShare=!!(navigator.canShare&&navigator.canShare({files:[pdfFile]}));
+    el("pShare").hidden=!canShare;
+    pdfMsg("PDF ready",canShare?`${pages.length} pages. Tap Share / Print, then choose Print.`:`${pages.length} pages. Open the PDF to print it.`,true);
+  }catch(err){
+    pdfMsg("Couldn't build the PDF","Check your connection the first time you print, then try again.",true);el("pShare").hidden=true;el("pOpen").hidden=true;
+  }finally{stage.innerHTML="";busy=false}
+}
+el("pShare").onclick=async()=>{if(!pdfFile)return;try{await navigator.share({files:[pdfFile],title:pdfFile.name})}catch(e){if(e&&e.name!=="AbortError")window.open(pdfUrl,"_blank")}};
+el("pClose").onclick=()=>{el("pdfm").hidden=true;el("pOpen").hidden=false};
 el("pvBtn").onclick=openPreview;
-el("prBtn").onclick=()=>doPrint([st.day]);
+el("prBtn").onclick=()=>makePdf([st.day]);
 el("ovClose").onclick=()=>{el("ov").hidden=true;el("pv").innerHTML=""};
-el("ovDay").onclick=()=>doPrint([st.day]);
-el("ovAll").onclick=()=>doPrint([1,2,3,4,5]);
+el("ovDay").onclick=()=>makePdf([st.day]);
+el("ovAll").onclick=()=>makePdf([1,2,3,4,5]);
 window.addEventListener("resize",()=>{if(!el("ov").hidden)openPreview()});
 
 renderAll();
